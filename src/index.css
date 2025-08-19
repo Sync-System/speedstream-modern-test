@@ -47,9 +47,9 @@ All colors MUST be HSL.
     --glass-border: 210 40% 20%;
 
     /* Gradients */
-    --gradient-main: linear-gradient(135deg, hsl(240 23% 9%) 0%, hsl(258 20% 12%) 50%, hsl(240 21% 8%) 100%);
-    --gradient-card: linear-gradient(135deg, hsl(240 21% 12% / 0.7) 0%, hsl(240 19% 16% / 0.5) 100%);
-    --gradient-button: linear-gradient(135deg, hsl(158 64% 52%) 0%, hsl(193 76% 57%) 100%);
+    --gradient-main: linear-gradient(135deg, hsl(240 23% 9%) 0%, hsl(258 20% 12%) 30%, hsl(193 76% 8%) 70%, hsl(240 21% 8%) 100%);
+    --gradient-card: linear-gradient(135deg, hsl(240 21% 12% / 0.8) 0%, hsl(240 19% 16% / 0.6) 100%);
+    --gradient-button: linear-gradient(135deg, hsl(158 64% 52%) 0%, hsl(193 76% 57%) 50%, hsl(158 64% 52%) 100%);
     
     /* Shadows */
     --shadow-glass: 0 8px 32px hsl(240 23% 9% / 0.37);
@@ -92,5 +92,20 @@ All colors MUST be HSL.
 
   .glow-effect {
     box-shadow: var(--shadow-glow);
+  }
+
+  .network-connection {
+    @apply relative;
+  }
+  
+  .network-connection::before {
+    content: '';
+    @apply absolute inset-0 bg-gradient-to-r from-transparent via-primary/20 to-transparent;
+    animation: pulse-connection 2s ease-in-out infinite;
+  }
+  
+  @keyframes pulse-connection {
+    0%, 100% { opacity: 0; }
+    50% { opacity: 1; }
   }
 }
