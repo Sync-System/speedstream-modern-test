@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNetworkInfo } from "@/hooks/useNetworkInfo";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -27,18 +28,33 @@ interface NetworkMetrics {
 }
 
 export function SpeedMetrics({ isRunning }: { isRunning: boolean }) {
+  const { networkInfo } = useNetworkInfo();
+  
   const [metrics, setMetrics] = useState<NetworkMetrics>({
     jitter: 0,
     packetLoss: 0,
-    bandwidth: 0,
+    bandwidth: networkInfo.downloadSpeed || 0,
     latency: 0,
     stability: 0,
     serverLoad: 0,
-    location: "San Francisco, CA",
-    isp: "Example ISP",
-    connectionType: "Fiber",
-    ipAddress: "192.168.1.1"
+    location: networkInfo.location.city ? `${networkInfo.location.city}, ${networkInfo.location.region}` : "Detecting...",
+    isp: networkInfo.isp,
+    connectionType: networkInfo.connectionType,
+    ipAddress: networkInfo.publicIP
   });
+
+  
+  // Update metrics when network info changes
+  useEffect(() => {
+    setMetrics(prev => ({
+      ...prev,
+      location: networkInfo.location.city ? `${networkInfo.location.city}, ${networkInfo.location.region}` : "Detecting...",
+      isp: networkInfo.isp,
+      connectionType: networkInfo.connectionType,
+      ipAddress: networkInfo.publicIP,
+      bandwidth: networkInfo.downloadSpeed || prev.bandwidth
+    }));
+  }, [networkInfo]);
 
   useEffect(() => {
     if (!isRunning) return;

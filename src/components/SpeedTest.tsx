@@ -3,9 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Play, Download, Upload, Wifi, Globe, Activity, Zap, RotateCcw } from "lucide-react";
+import { Play, Download, Upload, Wifi, Globe, Activity, Zap, RotateCcw, RefreshCw } from "lucide-react";
 import { NetworkGlobe } from "./NetworkGlobe";
 import { SpeedMetrics } from "./SpeedMetrics";
+import { NetworkStatus } from "./NetworkStatus";
+import { useNetworkInfo } from "@/hooks/useNetworkInfo";
 import { cn } from "@/lib/utils";
 
 interface SpeedTestState {
@@ -97,6 +99,8 @@ const SpeedGauge = ({
 };
 
 export function SpeedTest() {
+  const { networkInfo, loading: networkLoading, error: networkError, refreshNetworkInfo } = useNetworkInfo();
+  
   const [state, setState] = useState<SpeedTestState>({
     isRunning: false,
     phase: 'idle',
@@ -106,9 +110,20 @@ export function SpeedTest() {
     progress: 0,
     jitter: 0,
     packetLoss: 0,
-    serverLocation: 'San Francisco, CA',
+    serverLocation: networkInfo.location.city ? `${networkInfo.location.city}, ${networkInfo.location.region}` : 'Detecting...',
     testHistory: [],
   });
+
+  
+  // Update server location when network info changes
+  useEffect(() => {
+    if (networkInfo.location.city && networkInfo.location.region) {
+      setState(prev => ({
+        ...prev,
+        serverLocation: `${networkInfo.location.city}, ${networkInfo.location.region}`
+      }));
+    }
+  }, [networkInfo]);
 
   const runSpeedTest = async () => {
     setState(prev => ({ ...prev, isRunning: true, phase: 'ping', progress: 0 }));
@@ -208,12 +223,24 @@ export function SpeedTest() {
           <div className="flex justify-center items-center space-x-4 mt-4">
             <Badge variant="secondary" className="flex items-center space-x-1">
               <Globe className="w-3 h-3" />
-              <span>{state.serverLocation}</span>
+              <span>{networkInfo.location.city ? `${networkInfo.location.city}, ${networkInfo.location.region}` : 'Detecting...'}</span>
+            </Badge>
+            <Badge variant={networkInfo.isOnline ? "default" : "destructive"} className="flex items-center space-x-1">
+              <Wifi className="w-3 h-3" />
+              <span>{networkInfo.isOnline ? networkInfo.connectionType : 'Offline'}</span>
             </Badge>
             <Badge variant="outline" className="flex items-center space-x-1">
-              <Wifi className="w-3 h-3" />
-              <span>IPv4 Connected</span>
+              <span>{networkInfo.publicIP}</span>
             </Badge>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={refreshNetworkInfo}
+              className="h-6 w-6 p-0"
+              disabled={networkLoading}
+            >
+              <RefreshCw className={cn("w-3 h-3", networkLoading && "animate-spin")} />
+            </Button>
           </div>
         </div>
 
@@ -277,14 +304,18 @@ export function SpeedTest() {
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="test" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 glass-card">
+        <TabsList className="grid w-full grid-cols-5 glass-card">
           <TabsTrigger value="test" className="flex items-center space-x-2">
             <Zap className="w-4 h-4" />
             <span>Speed Test</span>
           </TabsTrigger>
+          <TabsTrigger value="network" className="flex items-center space-x-2">
+            <Wifi className="w-4 h-4" />
+            <span>Network</span>
+          </TabsTrigger>
           <TabsTrigger value="globe" className="flex items-center space-x-2">
             <Globe className="w-4 h-4" />
-            <span>Network Map</span>
+            <span>Global Map</span>
           </TabsTrigger>
           <TabsTrigger value="metrics" className="flex items-center space-x-2">
             <Activity className="w-4 h-4" />
@@ -383,10 +414,22 @@ export function SpeedTest() {
                     <span className="text-sm text-muted-foreground">Server:</span>
                     <span className="font-medium">{state.serverLocation}</span>
                   </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground">Public IP:</span>
+                    <span className="font-medium font-mono text-xs">{networkInfo.publicIP}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground">ISP:</span>
+                    <span className="font-medium">{networkInfo.isp}</span>
+                  </div>
                 </div>
               </Card>
             </div>
           )}
+        </TabsContent>
+
+        <TabsContent value="network" className="mt-6">
+          <NetworkStatus />
         </TabsContent>
 
         <TabsContent value="globe" className="mt-6">
