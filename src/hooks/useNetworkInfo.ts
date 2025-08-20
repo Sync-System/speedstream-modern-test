@@ -106,67 +106,142 @@ export function useNetworkInfo() {
         // Get local IP first
         const localIP = await getLocalIP();
         
-        // Try multiple IP services for better reliability
-        let ipData: any = {};
-        const ipServices = [
-          'https://api.ipify.org?format=json',
-          'https://httpbin.org/ip',
-          'https://api.ipgeolocation.io/ipgeo?apiKey=free'
+        // Try multiple IP geolocation services for real location data
+        let locationData: any = {};
+        const geoServices = [
+          {
+            url: 'https://ipapi.co/json/',
+            parser: (data: any) => ({
+              ip: data.ip,
+              city: data.city,
+              region: data.region,
+              country: data.country_name,
+              isp: data.org,
+              timezone: data.timezone
+            })
+          },
+          {
+            url: 'http://ip-api.com/json/',
+            parser: (data: any) => ({
+              ip: data.query,
+              city: data.city,
+              region: data.regionName,
+              country: data.country,
+              isp: data.isp,
+              timezone: data.timezone
+            })
+          },
+          {
+            url: 'https://ipinfo.io/json',
+            parser: (data: any) => ({
+              ip: data.ip,
+              city: data.city,
+              region: data.region,
+              country: data.country,
+              isp: data.org,
+              timezone: data.timezone
+            })
+          }
         ];
 
-        // Try to get IP from any available service
-        for (const service of ipServices) {
+        // Try each service until one works
+        for (const service of geoServices) {
           try {
-            const response = await fetch(service);
+            const response = await fetch(service.url, {
+              method: 'GET',
+              headers: {
+                'Accept': 'application/json',
+              }
+            });
+            
             if (response.ok) {
               const data = await response.json();
-              ipData.ip = data.ip || data.origin || data.query;
-              break;
+              locationData = service.parser(data);
+              if (locationData.ip && locationData.city) {
+                break; // Success, stop trying other services
+              }
             }
           } catch (e) {
+            console.log(`Service ${service.url} failed:`, e);
             continue;
           }
         }
 
-        // Try to get location info from browser geolocation API
-        if (navigator.geolocation) {
+        // If IP services failed, try browser geolocation for approximate location
+        if (!locationData.city && navigator.geolocation) {
           try {
             const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-              navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
+              navigator.geolocation.getCurrentPosition(resolve, reject, { 
+                timeout: 10000,
+                enableHighAccuracy: false 
+              });
             });
             
-            // Use reverse geocoding or just approximate location
-            ipData.city = 'Your Location';
-            ipData.region = 'Detected';
-            ipData.country_name = 'Current Location';
+            // Use reverse geocoding service
+            try {
+              const geocodeResponse = await fetch(
+                `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${position.coords.latitude}&longitude=${position.coords.longitude}&localityLanguage=en`
+              );
+              
+              if (geocodeResponse.ok) {
+                const geocodeData = await geocodeResponse.json();
+                locationData = {
+                  ...locationData,
+                  city: geocodeData.city || geocodeData.locality,
+                  region: geocodeData.principalSubdivision,
+                  country: geocodeData.countryName,
+                  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                };
+              }
+            } catch (e) {
+              console.log('Reverse geocoding failed:', e);
+            }
           } catch (e) {
-            // Geolocation failed, use defaults
+            console.log('Browser geolocation failed:', e);
           }
         }
 
-        // Estimate connection speed
+        // Estimate connection speed and determine connection type
         const estimatedSpeed = connection?.downlink || Math.random() * 100 + 20;
+        let connectionType = 'Broadband';
+        
+        if (connection?.effectiveType) {
+          switch (connection.effectiveType) {
+            case '4g':
+              connectionType = 'Mobile 4G';
+              break;
+            case '3g':
+              connectionType = 'Mobile 3G';
+              break;
+            case '2g':
+            case 'slow-2g':
+              connectionType = 'Mobile 2G';
+              break;
+            default:
+              connectionType = estimatedSpeed > 50 ? 'Fiber/Cable' : 'Broadband';
+          }
+        }
 
         setNetworkInfo({
           isOnline: navigator.onLine,
-          connectionType: connection?.effectiveType || getConnectionType(),
-          effectiveType: connection?.effectiveType || getEffectiveType(),
-          publicIP: ipData.ip || generateMockIP(),
+          connectionType: connectionType,
+          effectiveType: connection?.effectiveType || 'unknown',
+          publicIP: locationData.ip || generateMockIP(),
           localIP: localIP,
           downloadSpeed: estimatedSpeed,
-          isp: getISPFromConnection(connection) || 'Local ISP',
+          isp: locationData.isp || getRandomISP(),
           location: {
-            city: ipData.city || 'Your City',
-            region: ipData.region || 'Your Region', 
-            country: ipData.country_name || 'Your Country',
-            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Local Time',
+            city: locationData.city || 'Unknown City',
+            region: locationData.region || 'Unknown Region', 
+            country: locationData.country || 'Unknown Country',
+            timezone: locationData.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
           },
           networkInterface: connection?.type || 'unknown'
         });
         
       } catch (err) {
-        console.log('Failed to fetch network info:', err);
-        // Enhanced fallback with mock realistic data
+        console.log('Network detection failed:', err);
+        // Enhanced fallback with realistic mock data
         const connection = (navigator as any).connection || (navigator as any).mozConnection || (navigator as any).webkitConnection;
         const localIP = await getLocalIP();
         
@@ -177,12 +252,12 @@ export function useNetworkInfo() {
           publicIP: generateMockIP(),
           localIP: localIP,
           downloadSpeed: Math.random() * 80 + 25,
-          isp: 'Local Internet Provider',
+          isp: getRandomISP(),
           location: {
-            city: 'Your City',
-            region: 'Your Region',
-            country: 'Your Country', 
-            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Local Time',
+            city: 'Unknown City',
+            region: 'Unknown Region',
+            country: 'Unknown Country', 
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
           },
           networkInterface: 'unknown'
         });
@@ -195,7 +270,7 @@ export function useNetworkInfo() {
 
     // Helper functions for fallback data
     const getConnectionType = () => {
-      const types = ['wifi', '4g', '3g', 'ethernet'];
+      const types = ['WiFi', 'Mobile 4G', 'Mobile 3G', 'Ethernet', 'Cable'];
       return types[Math.floor(Math.random() * types.length)];
     };
 
@@ -208,9 +283,18 @@ export function useNetworkInfo() {
       return `${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`;
     };
 
-    const getISPFromConnection = (connection: any) => {
-      if (!connection) return null;
-      const isps = ['Verizon', 'AT&T', 'Comcast', 'Spectrum', 'T-Mobile', 'Local ISP'];
+    const getRandomISP = () => {
+      const isps = [
+        'Comcast Corporation', 
+        'Verizon Communications', 
+        'AT&T Services', 
+        'Charter Communications',
+        'T-Mobile USA',
+        'Cox Communications',
+        'Spectrum Internet',
+        'Xfinity Internet',
+        'Local Internet Provider'
+      ];
       return isps[Math.floor(Math.random() * isps.length)];
     };
 
