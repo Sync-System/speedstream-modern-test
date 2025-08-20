@@ -63,23 +63,28 @@ export function NetworkGlobe({ isActive }: { isActive: boolean }) {
       // Meridians
       for (let i = 0; i < 12; i++) {
         const angle = (i * Math.PI) / 6 + rotation;
+        const radiusX = Math.abs(radius * Math.cos(angle)); // Ensure positive radius
         ctx.beginPath();
-        ctx.ellipse(centerX, centerY, radius * Math.cos(angle), radius, angle, 0, Math.PI * 2);
+        ctx.ellipse(centerX, centerY, radiusX, radius, angle, 0, Math.PI * 2);
         ctx.stroke();
       }
       
       // Parallels
       for (let i = 1; i < 6; i++) {
-        const r = radius * Math.sin((i * Math.PI) / 6);
+        const r = Math.abs(radius * Math.sin((i * Math.PI) / 6)); // Ensure positive radius
         const y = centerY - radius * Math.cos((i * Math.PI) / 6);
-        ctx.beginPath();
-        ctx.ellipse(centerX, y, r, r * 0.3, 0, 0, Math.PI * 2);
-        ctx.stroke();
+        const ellipseHeight = Math.abs(r * 0.3); // Ensure positive height
         
-        const y2 = centerY + radius * Math.cos((i * Math.PI) / 6);
-        ctx.beginPath();
-        ctx.ellipse(centerX, y2, r, r * 0.3, 0, 0, Math.PI * 2);
-        ctx.stroke();
+        if (r > 0 && ellipseHeight > 0) { // Only draw if dimensions are valid
+          ctx.beginPath();
+          ctx.ellipse(centerX, y, r, ellipseHeight, 0, 0, Math.PI * 2);
+          ctx.stroke();
+          
+          const y2 = centerY + radius * Math.cos((i * Math.PI) / 6);
+          ctx.beginPath();
+          ctx.ellipse(centerX, y2, r, ellipseHeight, 0, 0, Math.PI * 2);
+          ctx.stroke();
+        }
       }
 
       // Draw connection points
