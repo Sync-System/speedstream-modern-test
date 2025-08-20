@@ -8,6 +8,7 @@ import { NetworkGlobe } from "./NetworkGlobe";
 import { SpeedMetrics } from "./SpeedMetrics";
 import { NetworkStatus } from "./NetworkStatus";
 import { AdsPromotion } from "./AdsPromotion";
+import { InteractiveGlobe } from "./InteractiveGlobe";
 import { useNetworkInfo } from "@/hooks/useNetworkInfo";
 import { cn } from "@/lib/utils";
 
@@ -439,7 +440,7 @@ export function SpeedTest() {
 
         <TabsContent value="globe" className="mt-6">
           <Card className="glass-card p-6 h-96">
-            <NetworkGlobe isActive={state.isRunning} />
+            <InteractiveGlobe isActive={state.isRunning} />
           </Card>
         </TabsContent>
 
