@@ -7,6 +7,7 @@ import { Play, Download, Upload, Wifi, Globe, Activity, Zap, RotateCcw, RefreshC
 import { NetworkGlobe } from "./NetworkGlobe";
 import { SpeedMetrics } from "./SpeedMetrics";
 import { NetworkStatus } from "./NetworkStatus";
+import { AdsPromotion } from "./AdsPromotion";
 import { useNetworkInfo } from "@/hooks/useNetworkInfo";
 import { cn } from "@/lib/utils";
 
@@ -215,10 +216,10 @@ export function SpeedTest() {
       <div className="text-center space-y-6">
         <div className="space-y-2">
           <h1 className="text-6xl font-bold bg-gradient-button bg-clip-text text-transparent">
-            SpeedStream Pro
+            SpeedlyTest
           </h1>
           <p className="text-xl text-muted-foreground">
-            Professional Network Performance Analysis
+            Internet Speed Test - Fast & Accurate Network Analysis
           </p>
           <div className="flex justify-center items-center space-x-4 mt-4">
             <Badge variant="secondary" className="flex items-center space-x-1">
@@ -304,7 +305,7 @@ export function SpeedTest() {
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="test" className="w-full">
-        <TabsList className="grid w-full grid-cols-5 glass-card">
+        <TabsList className="grid w-full grid-cols-6 glass-card">
           <TabsTrigger value="test" className="flex items-center space-x-2">
             <Zap className="w-4 h-4" />
             <span>Speed Test</span>
@@ -324,6 +325,10 @@ export function SpeedTest() {
           <TabsTrigger value="history" className="flex items-center space-x-2">
             <Download className="w-4 h-4" />
             <span>History</span>
+          </TabsTrigger>
+          <TabsTrigger value="offers" className="flex items-center space-x-2">
+            <Zap className="w-4 h-4" />
+            <span>Offers</span>
           </TabsTrigger>
         </TabsList>
 
@@ -472,6 +477,10 @@ export function SpeedTest() {
               </div>
             )}
           </Card>
+        </TabsContent>
+
+        <TabsContent value="offers" className="mt-6">
+          <AdsPromotion />
         </TabsContent>
       </Tabs>
     </div>
