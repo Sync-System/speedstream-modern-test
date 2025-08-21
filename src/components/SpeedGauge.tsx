@@ -28,6 +28,10 @@ export const SpeedGauge = ({
   const strokeDashoffset = strokeDasharray - (percentage / 100) * strokeDasharray;
 
   if (isMain) {
+    // Different gauge styles for download vs upload
+    const isDownload = label.toLowerCase().includes('download');
+    const arcColor = isDownload ? '--speed-download' : '--speed-upload';
+    
     return (
       <div className="relative flex flex-col items-center">
         <div className="relative" style={{ width: size, height: size }}>
@@ -51,23 +55,61 @@ export const SpeedGauge = ({
               className="opacity-20"
               transform={`rotate(135 ${size / 2} ${size / 2})`}
             />
-            {/* Progress arc */}
-            <circle
-              cx={size / 2}
-              cy={size / 2}
-              r={radius}
-              stroke={`hsl(var(${color}))`}
-              strokeWidth={strokeWidth}
-              fill="none"
-              strokeLinecap="round"
-              strokeDasharray={strokeDasharray}
-              strokeDashoffset={strokeDashoffset}
-              className="transition-all duration-1000 ease-out"
-              transform={`rotate(135 ${size / 2} ${size / 2})`}
-              style={{
-                filter: `drop-shadow(0 0 12px hsl(var(${color}) / 0.6))`
-              }}
-            />
+            
+            {/* Different progress arcs for download vs upload */}
+            {isDownload ? (
+              // Download: Cyan gradient arc
+              <>
+                <defs>
+                  <linearGradient id="downloadGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="hsl(var(--speed-download))" />
+                    <stop offset="100%" stopColor="hsl(194 76% 70%)" />
+                  </linearGradient>
+                </defs>
+                <circle
+                  cx={size / 2}
+                  cy={size / 2}
+                  r={radius}
+                  stroke="url(#downloadGradient)"
+                  strokeWidth={strokeWidth}
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeDasharray={strokeDasharray}
+                  strokeDashoffset={strokeDashoffset}
+                  className="transition-all duration-1000 ease-out"
+                  transform={`rotate(135 ${size / 2} ${size / 2})`}
+                  style={{
+                    filter: `drop-shadow(0 0 12px hsl(var(--speed-download) / 0.6))`
+                  }}
+                />
+              </>
+            ) : (
+              // Upload: Purple gradient arc  
+              <>
+                <defs>
+                  <linearGradient id="uploadGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="hsl(var(--speed-upload))" />
+                    <stop offset="100%" stopColor="hsl(285 85% 75%)" />
+                  </linearGradient>
+                </defs>
+                <circle
+                  cx={size / 2}
+                  cy={size / 2}
+                  r={radius}
+                  stroke="url(#uploadGradient)"
+                  strokeWidth={strokeWidth}
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeDasharray={strokeDasharray}
+                  strokeDashoffset={strokeDashoffset}
+                  className="transition-all duration-1000 ease-out"
+                  transform={`rotate(135 ${size / 2} ${size / 2})`}
+                  style={{
+                    filter: `drop-shadow(0 0 12px hsl(var(--speed-upload) / 0.6))`
+                  }}
+                />
+              </>
+            )}
           </svg>
           
           {/* Center content */}
@@ -75,12 +117,12 @@ export const SpeedGauge = ({
             <div className="text-center mb-4">
               <div 
                 className="text-5xl font-bold mb-2" 
-                style={{ color: `hsl(var(${color}))` }}
+                style={{ color: `hsl(var(${isDownload ? '--speed-download' : '--speed-upload'}))` }}
               >
                 {value.toFixed(2)}
               </div>
               <div className="text-lg text-muted-foreground flex items-center justify-center space-x-2">
-                <Icon className="w-5 h-5" style={{ color: `hsl(var(${color}))` }} />
+                <Icon className="w-5 h-5" style={{ color: `hsl(var(${isDownload ? '--speed-download' : '--speed-upload'}))` }} />
                 <span>{unit}</span>
               </div>
             </div>
