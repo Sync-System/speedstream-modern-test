@@ -3,8 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Play, Download, Upload, Wifi, Globe, Activity, Zap, RotateCcw, RefreshCw } from "lucide-react";
-import { NetworkGlobe } from "./NetworkGlobe";
+import { Play, Download, Upload, Wifi, Globe, Activity, Zap, RotateCcw, RefreshCw, User } from "lucide-react";
+import { SpeedGauge } from "./SpeedGauge";
 import { SpeedMetrics } from "./SpeedMetrics";
 import { NetworkStatus } from "./NetworkStatus";
 import { AdsPromotion } from "./AdsPromotion";
@@ -34,71 +34,6 @@ interface TestResult {
   grade: 'A' | 'B' | 'C' | 'D' | 'F';
 }
 
-const SpeedGauge = ({ 
-  value, 
-  maxValue, 
-  label, 
-  unit, 
-  color, 
-  icon: Icon 
-}: { 
-  value: number; 
-  maxValue: number; 
-  label: string; 
-  unit: string; 
-  color: string;
-  icon: any;
-}) => {
-  const percentage = Math.min((value / maxValue) * 100, 100);
-  const circumference = 2 * Math.PI * 45;
-  const strokeDasharray = circumference;
-  const strokeDashoffset = circumference - (percentage / 100) * circumference;
-
-  return (
-    <div className="flex flex-col items-center space-y-4">
-      <div className="relative w-32 h-32">
-        <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 100 100">
-          {/* Background circle */}
-          <circle
-            cx="50"
-            cy="50"
-            r="45"
-            stroke="hsl(var(--muted))"
-            strokeWidth="8"
-            fill="none"
-            className="opacity-20"
-          />
-          {/* Progress circle */}
-          <circle
-            cx="50"
-            cy="50"
-            r="45"
-            stroke={`hsl(var(${color}))`}
-            strokeWidth="8"
-            fill="none"
-            strokeLinecap="round"
-            strokeDasharray={strokeDasharray}
-            strokeDashoffset={strokeDashoffset}
-            className="transition-all duration-1000 ease-out"
-            style={{
-              filter: `drop-shadow(0 0 8px hsl(var(${color}) / 0.5))`
-            }}
-          />
-        </svg>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <Icon className={`w-8 h-8`} style={{ color: `hsl(var(${color}))` }} />
-        </div>
-      </div>
-      <div className="text-center">
-        <div className="text-2xl font-bold" style={{ color: `hsl(var(${color}))` }}>
-          {value.toFixed(1)}
-        </div>
-        <div className="text-sm text-muted-foreground">{unit}</div>
-        <div className="text-xs text-muted-foreground mt-1">{label}</div>
-      </div>
-    </div>
-  );
-};
 
 export function SpeedTest() {
   const { networkInfo, loading: networkLoading, error: networkError, refreshNetworkInfo } = useNetworkInfo();
@@ -212,95 +147,172 @@ export function SpeedTest() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8">
-      {/* Header */}
-      <div className="text-center space-y-6">
-        <div className="space-y-2">
-          <h1 className="text-6xl font-bold bg-gradient-button bg-clip-text text-transparent">
-            SpeedlyTest
-          </h1>
-          <p className="text-xl text-muted-foreground">
-            Internet Speed Test - Fast & Accurate Network Analysis
-          </p>
-          <div className="flex justify-center items-center space-x-4 mt-4">
-            <Badge variant="secondary" className="flex items-center space-x-1">
-              <Globe className="w-3 h-3" />
-              <span>{networkInfo.location.city ? `${networkInfo.location.city}, ${networkInfo.location.region}` : 'Detecting...'}</span>
-            </Badge>
-            <Badge variant={networkInfo.isOnline ? "default" : "destructive"} className="flex items-center space-x-1">
-              <Wifi className="w-3 h-3" />
-              <span>{networkInfo.isOnline ? networkInfo.connectionType : 'Offline'}</span>
-            </Badge>
-            <Badge variant="outline" className="flex items-center space-x-1">
-              <span>{networkInfo.publicIP}</span>
-            </Badge>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={refreshNetworkInfo}
-              className="h-6 w-6 p-0"
-              disabled={networkLoading}
-            >
-              <RefreshCw className={cn("w-3 h-3", networkLoading && "animate-spin")} />
-            </Button>
+    <div className="min-h-screen bg-gradient-main text-foreground">
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        
+        {/* Top Stats Bar */}
+        <div className="glass-card rounded-2xl p-6 mb-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="text-center">
+              <div className="flex items-center justify-center space-x-2 mb-2">
+                <Download className="w-5 h-5 text-speed-download" />
+                <span className="text-sm font-medium text-muted-foreground">DOWNLOAD</span>
+              </div>
+              <div className="text-3xl font-bold text-speed-download">
+                {state.downloadSpeed > 0 ? state.downloadSpeed.toFixed(2) : "—"}
+              </div>
+              <div className="text-sm text-muted-foreground">Mbps</div>
+            </div>
+
+            <div className="text-center">
+              <div className="flex items-center justify-center space-x-2 mb-2">
+                <Upload className="w-5 h-5 text-speed-upload" />
+                <span className="text-sm font-medium text-muted-foreground">UPLOAD</span>
+              </div>
+              <div className="text-3xl font-bold text-speed-upload">
+                {state.uploadSpeed > 0 ? state.uploadSpeed.toFixed(2) : "—"}
+              </div>
+              <div className="text-sm text-muted-foreground">Mbps</div>
+            </div>
+
+            <div className="text-center">
+              <div className="flex items-center justify-center space-x-2 mb-2">
+                <Wifi className="w-4 h-4 text-speed-ping" />
+                <span className="text-sm font-medium text-muted-foreground">PING</span>
+              </div>
+              <div className="flex items-center justify-center space-x-4">
+                <div className="flex items-center space-x-1">
+                  <div className="w-2 h-2 rounded-full bg-speed-ping"></div>
+                  <span className="text-lg font-bold text-speed-ping">{state.ping > 0 ? state.ping.toFixed(0) : "—"}</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <div className="w-2 h-2 rounded-full bg-speed-download"></div>
+                  <span className="text-lg font-bold text-speed-download">{state.downloadSpeed > 0 ? Math.min(state.downloadSpeed * 2.5, 99).toFixed(0) : "—"}</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <div className="w-2 h-2 rounded-full bg-speed-upload"></div>
+                  <span className="text-lg font-bold text-speed-upload">{state.uploadSpeed > 0 ? Math.min(state.uploadSpeed * 1.8, 99).toFixed(0) : "—"}</span>
+                </div>
+              </div>
+              <div className="text-sm text-muted-foreground">ms</div>
+            </div>
+
+            <div className="text-center">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={refreshNetworkInfo}
+                className="mb-2"
+                disabled={networkLoading}
+              >
+                <RefreshCw className={cn("w-4 h-4", networkLoading && "animate-spin")} />
+              </Button>
+              <div className="text-sm text-muted-foreground">
+                {networkInfo.location.city ? `${networkInfo.location.city}, ${networkInfo.location.region}` : 'Detecting...'}
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Main Control Panel */}
-        <div className="flex justify-center items-center space-x-6">
-          <div className="relative">
-            {!state.isRunning && state.phase === 'idle' && (
+        {/* Main Speedometer */}
+        <div className="flex justify-center mb-8">
+          {(state.phase !== 'idle' || state.downloadSpeed > 0) ? (
+            <SpeedGauge
+              value={state.phase === 'upload' ? state.uploadSpeed : state.downloadSpeed}
+              maxValue={1000}
+              label={state.phase === 'upload' ? 'Upload' : 'Download'}
+              unit="Mbps"
+              color={state.phase === 'upload' ? '--speed-upload' : '--speed-download'}
+              icon={state.phase === 'upload' ? Upload : Download}
+              isMain={true}
+            />
+          ) : (
+            <div className="flex flex-col items-center space-y-8">
+              <div className="text-center space-y-4">
+                <h1 className="text-5xl font-bold bg-gradient-button bg-clip-text text-transparent">
+                  SpeedlyTest
+                </h1>
+                <p className="text-lg text-muted-foreground">
+                  Internet Speed Test - Fast & Accurate Network Analysis
+                </p>
+              </div>
+              
               <Button
                 onClick={runSpeedTest}
                 size="lg"
                 className="h-32 w-32 rounded-full bg-gradient-button hover:scale-105 transition-all duration-300 glow-effect text-lg"
+                disabled={state.isRunning}
               >
-                <Play className="w-10 h-10 ml-1" />
-              </Button>
-            )}
-
-            {state.isRunning && (
-              <div className="relative">
-                <div className="w-32 h-32 rounded-full border-4 border-muted animate-spin-slow">
-                  <div 
-                    className="absolute inset-0 rounded-full border-4 border-transparent border-t-primary transition-all duration-300"
-                    style={{
-                      transform: `rotate(${state.progress * 3.6}deg)`
-                    }}
-                  />
-                </div>
-                <div className="absolute inset-0 flex items-center justify-center flex-col">
-                  <span className="text-lg font-medium">{Math.round(state.progress)}%</span>
-                  <span className="text-xs text-muted-foreground">
-                    {state.phase === 'ping' && 'Testing Ping'}
-                    {state.phase === 'download' && 'Download'}
-                    {state.phase === 'upload' && 'Upload'}
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {state.phase === 'complete' && (
-              <div className="flex space-x-2">
-                <Button
-                  onClick={resetTest}
-                  size="lg"
-                  className="h-32 w-32 rounded-full bg-gradient-button hover:scale-105 transition-all duration-300"
-                >
+                {state.isRunning ? (
+                  <div className="flex flex-col items-center space-y-1">
+                    <RefreshCw className="w-8 h-8 animate-spin" />
+                    <span className="text-xs">{Math.round(state.progress)}%</span>
+                  </div>
+                ) : (
                   <Play className="w-10 h-10 ml-1" />
-                </Button>
-                <Button
-                  onClick={runSpeedTest}
-                  variant="outline"
-                  size="lg"
-                  className="h-16 w-16 rounded-full"
-                >
-                  <RotateCcw className="w-6 h-6" />
-                </Button>
+                )}
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* Provider Info */}
+        <div className="glass-card rounded-2xl p-6 mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                <User className="w-6 h-6 text-muted-foreground" />
               </div>
-            )}
+              <div>
+                <div className="font-semibold text-lg">{networkInfo.isp || 'Cybernet'}</div>
+                <div className="text-sm text-muted-foreground font-mono">{networkInfo.publicIP}</div>
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="flex items-center space-x-2">
+                <Globe className="w-4 h-4 text-muted-foreground" />
+                <span className="font-medium">{networkInfo.isp || 'Cybernet (Pvt) Ltd'}</span>
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {networkInfo.location.city || 'Faisalabad'}
+              </div>
+            </div>
           </div>
         </div>
+
+        {/* Progress Bar */}
+        {state.isRunning && (
+          <div className="glass-card rounded-2xl p-2 mb-6">
+            <div className="relative h-2 bg-muted rounded-full overflow-hidden">
+              <div 
+                className="absolute left-0 top-0 h-full bg-gradient-to-r from-speed-download to-speed-upload transition-all duration-300 ease-out"
+                style={{ width: `${state.progress}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Action Buttons */}
+        {state.phase === 'complete' && (
+          <div className="flex justify-center space-x-4 mb-8">
+            <Button
+              onClick={resetTest}
+              size="lg"
+              className="bg-gradient-button hover:scale-105 transition-all duration-300"
+            >
+              <Play className="w-5 h-5 mr-2" />
+              Test Again
+            </Button>
+            <Button
+              onClick={runSpeedTest}
+              variant="outline"
+              size="lg"
+            >
+              <RotateCcw className="w-5 h-5 mr-2" />
+              Retry
+            </Button>
+          </div>
+        )}
 
       </div>
 
@@ -335,37 +347,6 @@ export function SpeedTest() {
 
         <TabsContent value="test" className="space-y-6 mt-6">
 
-          {/* Speed Gauges */}
-          {(state.phase !== 'idle' || state.downloadSpeed > 0) && (
-            <div className="glass-card rounded-2xl p-8 animate-scale-in">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 justify-items-center">
-                <SpeedGauge
-                  value={state.ping}
-                  maxValue={100}
-                  label="Ping"
-                  unit="ms"
-                  color="--speed-ping"
-                  icon={Wifi}
-                />
-                <SpeedGauge
-                  value={state.downloadSpeed}
-                  maxValue={200}
-                  label="Download"
-                  unit="Mbps"
-                  color="--speed-download"
-                  icon={Download}
-                />
-                <SpeedGauge
-                  value={state.uploadSpeed}
-                  maxValue={100}
-                  label="Upload"
-                  unit="Mbps"
-                  color="--speed-upload"
-                  icon={Upload}
-                />
-              </div>
-            </div>
-          )}
 
           {/* Enhanced Results Summary */}
           {state.phase === 'complete' && (

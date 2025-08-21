@@ -39,10 +39,10 @@ All colors MUST be HSL.
 
     --radius: 1rem;
 
-    /* SpeedStream specific colors */
-    --speed-download: 158 64% 52%;
-    --speed-upload: 45 93% 58%;
-    --speed-ping: 193 76% 57%;
+    /* SpeedTest specific colors - matching reference */
+    --speed-download: 194 76% 57%;  /* Cyan/Teal for download */
+    --speed-upload: 285 85% 62%;    /* Purple for upload */
+    --speed-ping: 45 93% 58%;       /* Yellow/Orange for ping */
     --glass-bg: 240 21% 12%;
     --glass-border: 210 40% 20%;
 
