@@ -150,167 +150,235 @@ export function SpeedTest() {
     <div className="min-h-screen bg-gradient-main text-foreground">
       <div className="max-w-4xl mx-auto px-4 py-8">
         
-        {/* Top Stats Bar */}
-        <div className="glass-card rounded-2xl p-6 mb-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <div className="text-center">
-              <div className="flex items-center justify-center space-x-2 mb-2">
-                <Download className="w-5 h-5 text-speed-download" />
-                <span className="text-sm font-medium text-muted-foreground">DOWNLOAD</span>
-              </div>
-              <div className="text-3xl font-bold text-speed-download">
-                {state.downloadSpeed > 0 ? state.downloadSpeed.toFixed(2) : "—"}
-              </div>
-              <div className="text-sm text-muted-foreground">Mbps</div>
-            </div>
-
-            <div className="text-center">
-              <div className="flex items-center justify-center space-x-2 mb-2">
-                <Upload className="w-5 h-5 text-speed-upload" />
-                <span className="text-sm font-medium text-muted-foreground">UPLOAD</span>
-              </div>
-              <div className="text-3xl font-bold text-speed-upload">
-                {state.uploadSpeed > 0 ? state.uploadSpeed.toFixed(2) : "—"}
-              </div>
-              <div className="text-sm text-muted-foreground">Mbps</div>
-            </div>
-
-            <div className="text-center">
-              <div className="flex items-center justify-center space-x-2 mb-2">
-                <Wifi className="w-4 h-4 text-speed-ping" />
-                <span className="text-sm font-medium text-muted-foreground">PING</span>
-              </div>
-              <div className="flex items-center justify-center space-x-4">
-                <div className="flex items-center space-x-1">
-                  <div className="w-2 h-2 rounded-full bg-speed-ping"></div>
-                  <span className="text-lg font-bold text-speed-ping">{state.ping > 0 ? state.ping.toFixed(0) : "—"}</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <div className="w-2 h-2 rounded-full bg-speed-download"></div>
-                  <span className="text-lg font-bold text-speed-download">{state.downloadSpeed > 0 ? Math.min(state.downloadSpeed * 2.5, 99).toFixed(0) : "—"}</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <div className="w-2 h-2 rounded-full bg-speed-upload"></div>
-                  <span className="text-lg font-bold text-speed-upload">{state.uploadSpeed > 0 ? Math.min(state.uploadSpeed * 1.8, 99).toFixed(0) : "—"}</span>
-                </div>
-              </div>
-              <div className="text-sm text-muted-foreground">ms</div>
-            </div>
-
-            <div className="text-center">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={refreshNetworkInfo}
-                className="mb-2"
-                disabled={networkLoading}
-              >
-                <RefreshCw className={cn("w-4 h-4", networkLoading && "animate-spin")} />
-              </Button>
-              <div className="text-sm text-muted-foreground">
-                {networkInfo.location.city ? `${networkInfo.location.city}, ${networkInfo.location.region}` : 'Detecting...'}
-              </div>
-            </div>
-          </div>
+        {/* Header Navigation */}
+        <div className="flex justify-center space-x-8 mb-12">
+          <button className="flex items-center space-x-2 text-muted-foreground hover:text-foreground transition-colors">
+            <Activity className="w-5 h-5" />
+            <span className="font-medium">RESULTS</span>
+          </button>
+          <button className="flex items-center space-x-2 text-muted-foreground hover:text-foreground transition-colors">
+            <Globe className="w-5 h-5" />
+            <span className="font-medium">SETTINGS</span>
+          </button>
         </div>
 
-        {/* Main Speedometer */}
-        <div className="flex justify-center mb-8">
-          {(state.phase !== 'idle' || state.downloadSpeed > 0) ? (
-            <SpeedGauge
-              value={state.phase === 'upload' ? state.uploadSpeed : state.downloadSpeed}
-              maxValue={1000}
-              label={state.phase === 'upload' ? 'Upload' : 'Download'}
-              unit="Mbps"
-              color={state.phase === 'upload' ? '--speed-upload' : '--speed-download'}
-              icon={state.phase === 'upload' ? Upload : Download}
-              isMain={true}
-            />
-          ) : (
-            <div className="flex flex-col items-center space-y-8">
-              <div className="text-center space-y-4">
-                <h1 className="text-5xl font-bold bg-gradient-button bg-clip-text text-transparent">
-                  SpeedlyTest
-                </h1>
-                <p className="text-lg text-muted-foreground">
-                  Internet Speed Test - Fast & Accurate Network Analysis
-                </p>
+        {/* Show different content based on test state */}
+        {state.phase === 'idle' && state.downloadSpeed === 0 ? (
+          // Start Screen
+          <div className="text-center space-y-12">
+            {/* Main GO Button */}
+            <div className="flex justify-center">
+              <div className="relative">
+                <Button
+                  onClick={runSpeedTest}
+                  size="lg"
+                  className="h-64 w-64 rounded-full bg-background border-2 border-speed-download hover:scale-105 transition-all duration-300 text-4xl font-bold"
+                  disabled={state.isRunning}
+                >
+                  {state.isRunning ? (
+                    <div className="flex flex-col items-center space-y-2">
+                      <RefreshCw className="w-12 h-12 animate-spin text-speed-download" />
+                      <span className="text-lg">{Math.round(state.progress)}%</span>
+                    </div>
+                  ) : (
+                    <span className="text-foreground">GO</span>
+                  )}
+                </Button>
+                {/* Animated border ring */}
+                <div className="absolute inset-0 rounded-full border-2 border-speed-download animate-pulse opacity-50"></div>
               </div>
-              
-              <Button
-                onClick={runSpeedTest}
-                size="lg"
-                className="h-32 w-32 rounded-full bg-gradient-button hover:scale-105 transition-all duration-300 glow-effect text-lg"
-                disabled={state.isRunning}
-              >
-                {state.isRunning ? (
-                  <div className="flex flex-col items-center space-y-1">
-                    <RefreshCw className="w-8 h-8 animate-spin" />
-                    <span className="text-xs">{Math.round(state.progress)}%</span>
+            </div>
+
+            {/* ISP and Server Info */}
+            <div className="flex justify-between items-center max-w-2xl mx-auto">
+              {/* Left: ISP Info */}
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                  <User className="w-6 h-6 text-muted-foreground" />
+                </div>
+                <div className="text-left">
+                  <div className="font-semibold text-lg text-foreground">{networkInfo.isp || 'Cybernet'}</div>
+                  <div className="text-sm text-muted-foreground font-mono">{networkInfo.publicIP}</div>
+                </div>
+              </div>
+
+              {/* Right: Server Info */}
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                  <Globe className="w-6 h-6 text-muted-foreground" />
+                </div>
+                <div className="text-right">
+                  <div className="font-semibold text-lg text-foreground">{networkInfo.isp || 'Cybernet (Pvt) Ltd'}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {networkInfo.location.city || 'Lahore'}
                   </div>
-                ) : (
-                  <Play className="w-10 h-10 ml-1" />
-                )}
-              </Button>
+                  <button className="text-speed-download text-sm hover:underline mt-1">
+                    Change Server
+                  </button>
+                </div>
+              </div>
             </div>
-          )}
-        </div>
 
-        {/* Provider Info */}
-        <div className="glass-card rounded-2xl p-6 mb-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
-                <User className="w-6 h-6 text-muted-foreground" />
-              </div>
-              <div>
-                <div className="font-semibold text-lg">{networkInfo.isp || 'Cybernet'}</div>
-                <div className="text-sm text-muted-foreground font-mono">{networkInfo.publicIP}</div>
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="flex items-center space-x-2">
-                <Globe className="w-4 h-4 text-muted-foreground" />
-                <span className="font-medium">{networkInfo.isp || 'Cybernet (Pvt) Ltd'}</span>
-              </div>
-              <div className="text-sm text-muted-foreground">
-                {networkInfo.location.city || 'Faisalabad'}
+            {/* Connections */}
+            <div className="space-y-4">
+              <h3 className="text-lg text-muted-foreground">Connections</h3>
+              <div className="flex justify-center space-x-8">
+                <button className="flex items-center space-x-2 text-foreground font-medium">
+                  <div className="w-8 h-8 flex items-center justify-center">
+                    <div className="grid grid-cols-3 gap-0.5">
+                      {[...Array(3)].map((_, i) => (
+                        <div key={i} className="w-1 h-1 bg-foreground rounded-full"></div>
+                      ))}
+                    </div>
+                  </div>
+                  <span>Multi</span>
+                </button>
+                <button className="flex items-center space-x-2 text-muted-foreground">
+                  <div className="w-8 h-8 flex items-center justify-center">
+                    <div className="w-1 h-1 bg-muted-foreground rounded-full"></div>
+                  </div>
+                  <span>Single</span>
+                </button>
               </div>
             </div>
           </div>
-        </div>
+        ) : (
+          // Test Results View
+          <div className="space-y-8">
+            {/* Top Stats Bar */}
+            <div className="glass-card rounded-2xl p-6">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div className="text-center">
+                  <div className="flex items-center justify-center space-x-2 mb-2">
+                    <Download className="w-5 h-5 text-speed-download" />
+                    <span className="text-sm font-medium text-muted-foreground">DOWNLOAD</span>
+                  </div>
+                  <div className="text-3xl font-bold text-speed-download">
+                    {state.downloadSpeed > 0 ? state.downloadSpeed.toFixed(2) : "—"}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Mbps</div>
+                </div>
 
-        {/* Progress Bar */}
-        {state.isRunning && (
-          <div className="glass-card rounded-2xl p-2 mb-6">
-            <div className="relative h-2 bg-muted rounded-full overflow-hidden">
-              <div 
-                className="absolute left-0 top-0 h-full bg-gradient-to-r from-speed-download to-speed-upload transition-all duration-300 ease-out"
-                style={{ width: `${state.progress}%` }}
+                <div className="text-center">
+                  <div className="flex items-center justify-center space-x-2 mb-2">
+                    <Upload className="w-5 h-5 text-speed-upload" />
+                    <span className="text-sm font-medium text-muted-foreground">UPLOAD</span>
+                  </div>
+                  <div className="text-3xl font-bold text-speed-upload">
+                    {state.uploadSpeed > 0 ? state.uploadSpeed.toFixed(2) : "—"}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Mbps</div>
+                </div>
+
+                <div className="text-center">
+                  <div className="flex items-center justify-center space-x-2 mb-2">
+                    <Wifi className="w-4 h-4 text-speed-ping" />
+                    <span className="text-sm font-medium text-muted-foreground">PING</span>
+                  </div>
+                  <div className="flex items-center justify-center space-x-4">
+                    <div className="flex items-center space-x-1">
+                      <div className="w-2 h-2 rounded-full bg-speed-ping"></div>
+                      <span className="text-lg font-bold text-speed-ping">{state.ping > 0 ? state.ping.toFixed(0) : "—"}</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <div className="w-2 h-2 rounded-full bg-speed-download"></div>
+                      <span className="text-lg font-bold text-speed-download">{state.downloadSpeed > 0 ? Math.min(state.downloadSpeed * 2.5, 99).toFixed(0) : "—"}</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <div className="w-2 h-2 rounded-full bg-speed-upload"></div>
+                      <span className="text-lg font-bold text-speed-upload">{state.uploadSpeed > 0 ? Math.min(state.uploadSpeed * 1.8, 99).toFixed(0) : "—"}</span>
+                    </div>
+                  </div>
+                  <div className="text-sm text-muted-foreground">ms</div>
+                </div>
+
+                <div className="text-center">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={refreshNetworkInfo}
+                    className="mb-2"
+                    disabled={networkLoading}
+                  >
+                    <RefreshCw className={cn("w-4 h-4", networkLoading && "animate-spin")} />
+                  </Button>
+                  <div className="text-sm text-muted-foreground">
+                    {networkInfo.location.city ? `${networkInfo.location.city}, ${networkInfo.location.region}` : 'Detecting...'}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Main Speedometer */}
+            <div className="flex justify-center">
+              <SpeedGauge
+                value={state.phase === 'upload' ? state.uploadSpeed : state.downloadSpeed}
+                maxValue={1000}
+                label={state.phase === 'upload' ? 'Upload' : 'Download'}
+                unit="Mbps"
+                color={state.phase === 'upload' ? '--speed-upload' : '--speed-download'}
+                icon={state.phase === 'upload' ? Upload : Download}
+                isMain={true}
               />
             </div>
-          </div>
-        )}
 
-        {/* Action Buttons */}
-        {state.phase === 'complete' && (
-          <div className="flex justify-center space-x-4 mb-8">
-            <Button
-              onClick={resetTest}
-              size="lg"
-              className="bg-gradient-button hover:scale-105 transition-all duration-300"
-            >
-              <Play className="w-5 h-5 mr-2" />
-              Test Again
-            </Button>
-            <Button
-              onClick={runSpeedTest}
-              variant="outline"
-              size="lg"
-            >
-              <RotateCcw className="w-5 h-5 mr-2" />
-              Retry
-            </Button>
+            {/* Provider Info */}
+            <div className="glass-card rounded-2xl p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                    <User className="w-6 h-6 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-lg">{networkInfo.isp || 'Cybernet'}</div>
+                    <div className="text-sm text-muted-foreground font-mono">{networkInfo.publicIP}</div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="flex items-center space-x-2">
+                    <Globe className="w-4 h-4 text-muted-foreground" />
+                    <span className="font-medium">{networkInfo.isp || 'Cybernet (Pvt) Ltd'}</span>
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {networkInfo.location.city || 'Faisalabad'}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Progress Bar */}
+            {state.isRunning && (
+              <div className="glass-card rounded-2xl p-2">
+                <div className="relative h-2 bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className="absolute left-0 top-0 h-full bg-gradient-to-r from-speed-download to-speed-upload transition-all duration-300 ease-out"
+                    style={{ width: `${state.progress}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            {state.phase === 'complete' && (
+              <div className="flex justify-center space-x-4">
+                <Button
+                  onClick={resetTest}
+                  size="lg"
+                  className="bg-gradient-button hover:scale-105 transition-all duration-300"
+                >
+                  <Play className="w-5 h-5 mr-2" />
+                  Test Again
+                </Button>
+                <Button
+                  onClick={runSpeedTest}
+                  variant="outline"
+                  size="lg"
+                >
+                  <RotateCcw className="w-5 h-5 mr-2" />
+                  Retry
+                </Button>
+              </div>
+            )}
           </div>
         )}
 
