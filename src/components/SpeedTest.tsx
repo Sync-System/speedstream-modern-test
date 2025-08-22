@@ -63,8 +63,13 @@ export function SpeedTest() {
   }, [networkInfo]);
 
   const runSpeedTest = async () => {
-    if (state.isRunning) return;
+    console.log('runSpeedTest called', { currentState: state.isRunning });
+    if (state.isRunning) {
+      console.log('Test already running, returning');
+      return;
+    }
     
+    console.log('Starting speed test...');
     setState(prev => ({ ...prev, isRunning: true, phase: 'ping', progress: 0 }));
 
     try {
@@ -189,7 +194,12 @@ export function SpeedTest() {
             <div className="flex justify-center">
               <div className="relative">
                 <Button
-                  onClick={() => !state.isRunning && runSpeedTest()}
+                  onClick={() => {
+                    console.log('GO button clicked', { isRunning: state.isRunning, phase: state.phase });
+                    if (!state.isRunning) {
+                      runSpeedTest();
+                    }
+                  }}
                   size="lg"
                   className="h-64 w-64 rounded-full bg-background border-2 border-speed-download hover:scale-105 transition-all duration-300 text-4xl font-bold cursor-pointer"
                   disabled={state.isRunning}
