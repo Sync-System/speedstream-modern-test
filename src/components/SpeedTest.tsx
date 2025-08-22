@@ -63,64 +63,83 @@ export function SpeedTest() {
   }, [networkInfo]);
 
   const runSpeedTest = async () => {
+    if (state.isRunning) return;
+    
     setState(prev => ({ ...prev, isRunning: true, phase: 'ping', progress: 0 }));
 
-    // Simulate ping test
-    setState(prev => ({ ...prev, phase: 'ping' }));
-    for (let i = 0; i <= 100; i += 2) {
-      await new Promise(resolve => setTimeout(resolve, 30));
+    try {
+      // Simulate ping test
+      setState(prev => ({ ...prev, phase: 'ping' }));
+      for (let i = 0; i <= 100; i += 2) {
+        await new Promise(resolve => setTimeout(resolve, 30));
+        const pingValue = Math.min(15 + Math.random() * 20, 50);
+        setState(prev => ({ 
+          ...prev, 
+          progress: i * 0.2,
+          ping: pingValue
+        }));
+      }
+
+      // Simulate download test
+      setState(prev => ({ ...prev, phase: 'download', progress: 20 }));
+      let finalDownloadSpeed = 0;
+      for (let i = 0; i <= 100; i += 1) {
+        await new Promise(resolve => setTimeout(resolve, 40));
+        finalDownloadSpeed = Math.min(i * 0.8 + Math.random() * 15, 120);
+        setState(prev => ({ 
+          ...prev, 
+          progress: 20 + (i * 0.4),
+          downloadSpeed: finalDownloadSpeed
+        }));
+      }
+
+      // Simulate upload test
+      setState(prev => ({ ...prev, phase: 'upload', progress: 60 }));
+      let finalUploadSpeed = 0;
+      for (let i = 0; i <= 100; i += 1) {
+        await new Promise(resolve => setTimeout(resolve, 35));
+        finalUploadSpeed = Math.min(i * 0.4 + Math.random() * 8, 60);
+        setState(prev => ({ 
+          ...prev, 
+          progress: 60 + (i * 0.4),
+          uploadSpeed: finalUploadSpeed
+        }));
+      }
+
+      // Calculate final metrics
+      const jitter = 5 + Math.random() * 15;
+      const packetLoss = Math.random() * 2;
+      const finalPing = state.ping;
+      const grade = getSpeedGrade(finalDownloadSpeed, finalUploadSpeed, finalPing);
+      
+      const newResult: TestResult = {
+        id: Date.now().toString(),
+        timestamp: new Date(),
+        downloadSpeed: finalDownloadSpeed,
+        uploadSpeed: finalUploadSpeed,
+        ping: finalPing,
+        grade,
+      };
+
       setState(prev => ({ 
         ...prev, 
-        progress: i * 0.2,
-        ping: Math.min(15 + Math.random() * 20, 50)
+        phase: 'complete', 
+        progress: 100, 
+        isRunning: false,
+        downloadSpeed: finalDownloadSpeed,
+        uploadSpeed: finalUploadSpeed,
+        jitter,
+        packetLoss,
+        testHistory: [newResult, ...prev.testHistory.slice(0, 4)]
       }));
-    }
-
-    // Simulate download test
-    setState(prev => ({ ...prev, phase: 'download', progress: 20 }));
-    for (let i = 0; i <= 100; i += 1) {
-      await new Promise(resolve => setTimeout(resolve, 40));
+    } catch (error) {
+      console.error('Speed test error:', error);
       setState(prev => ({ 
         ...prev, 
-        progress: 20 + (i * 0.4),
-        downloadSpeed: Math.min(i * 0.5 + Math.random() * 10, 100)
+        isRunning: false, 
+        phase: 'idle' 
       }));
     }
-
-    // Simulate upload test
-    setState(prev => ({ ...prev, phase: 'upload', progress: 60 }));
-    for (let i = 0; i <= 100; i += 1) {
-      await new Promise(resolve => setTimeout(resolve, 35));
-      setState(prev => ({ 
-        ...prev, 
-        progress: 60 + (i * 0.4),
-        uploadSpeed: Math.min(i * 0.3 + Math.random() * 8, 50)
-      }));
-    }
-
-    // Calculate final metrics
-    const jitter = 5 + Math.random() * 15;
-    const packetLoss = Math.random() * 2;
-    const grade = getSpeedGrade(state.downloadSpeed, state.uploadSpeed, state.ping);
-    
-    const newResult: TestResult = {
-      id: Date.now().toString(),
-      timestamp: new Date(),
-      downloadSpeed: state.downloadSpeed,
-      uploadSpeed: state.uploadSpeed,
-      ping: state.ping,
-      grade,
-    };
-
-    setState(prev => ({ 
-      ...prev, 
-      phase: 'complete', 
-      progress: 100, 
-      isRunning: false,
-      jitter,
-      packetLoss,
-      testHistory: [newResult, ...prev.testHistory.slice(0, 4)]
-    }));
   };
 
   const getSpeedGrade = (download: number, upload: number, ping: number): 'A' | 'B' | 'C' | 'D' | 'F' => {
@@ -163,16 +182,16 @@ export function SpeedTest() {
         </div>
 
         {/* Show different content based on test state */}
-        {state.phase === 'idle' && state.downloadSpeed === 0 ? (
+        {(state.phase === 'idle' && !state.isRunning && state.downloadSpeed === 0) ? (
           // Start Screen
           <div className="text-center space-y-12">
             {/* Main GO Button */}
             <div className="flex justify-center">
               <div className="relative">
                 <Button
-                  onClick={runSpeedTest}
+                  onClick={() => !state.isRunning && runSpeedTest()}
                   size="lg"
-                  className="h-64 w-64 rounded-full bg-background border-2 border-speed-download hover:scale-105 transition-all duration-300 text-4xl font-bold"
+                  className="h-64 w-64 rounded-full bg-background border-2 border-speed-download hover:scale-105 transition-all duration-300 text-4xl font-bold cursor-pointer"
                   disabled={state.isRunning}
                 >
                   {state.isRunning ? (
@@ -362,7 +381,10 @@ export function SpeedTest() {
             {state.phase === 'complete' && (
               <div className="flex justify-center space-x-4">
                 <Button
-                  onClick={resetTest}
+                  onClick={() => {
+                    resetTest();
+                    setTimeout(() => runSpeedTest(), 100);
+                  }}
                   size="lg"
                   className="bg-gradient-button hover:scale-105 transition-all duration-300"
                 >
@@ -370,12 +392,12 @@ export function SpeedTest() {
                   Test Again
                 </Button>
                 <Button
-                  onClick={runSpeedTest}
+                  onClick={resetTest}
                   variant="outline"
                   size="lg"
                 >
                   <RotateCcw className="w-5 h-5 mr-2" />
-                  Retry
+                  Reset
                 </Button>
               </div>
             )}
