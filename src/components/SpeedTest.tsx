@@ -47,11 +47,10 @@ export function SpeedTest() {
     progress: 0,
     jitter: 0,
     packetLoss: 0,
-    serverLocation: networkInfo.location.city ? `${networkInfo.location.city}, ${networkInfo.location.region}` : 'Detecting...',
+    serverLocation: 'Detecting...',
     testHistory: [],
   });
 
-  
   // Update server location when network info changes
   useEffect(() => {
     if (networkInfo.location.city && networkInfo.location.region) {
@@ -63,18 +62,21 @@ export function SpeedTest() {
   }, [networkInfo]);
 
   const runSpeedTest = async () => {
-    console.log('runSpeedTest called', { currentState: state.isRunning, phase: state.phase });
-    if (state.isRunning) {
-      console.log('Test already running, returning');
-      return;
-    }
+    console.log('🚀 Starting speed test...');
     
-    console.log('Starting speed test...');
-    setState(prev => ({ ...prev, isRunning: true, phase: 'ping', progress: 0 }));
+    setState(prev => ({ 
+      ...prev, 
+      isRunning: true, 
+      phase: 'ping', 
+      progress: 0,
+      downloadSpeed: 0,
+      uploadSpeed: 0,
+      ping: 0 
+    }));
 
     try {
-      // Simulate ping test
-      setState(prev => ({ ...prev, phase: 'ping' }));
+      // Ping test phase
+      console.log('📊 Starting ping test...');
       for (let i = 0; i <= 100; i += 2) {
         await new Promise(resolve => setTimeout(resolve, 30));
         const pingValue = Math.min(15 + Math.random() * 20, 50);
@@ -85,7 +87,8 @@ export function SpeedTest() {
         }));
       }
 
-      // Simulate download test
+      // Download test phase
+      console.log('📥 Starting download test...');
       setState(prev => ({ ...prev, phase: 'download', progress: 20 }));
       let finalDownloadSpeed = 0;
       for (let i = 0; i <= 100; i += 1) {
@@ -98,7 +101,8 @@ export function SpeedTest() {
         }));
       }
 
-      // Simulate upload test
+      // Upload test phase  
+      console.log('📤 Starting upload test...');
       setState(prev => ({ ...prev, phase: 'upload', progress: 60 }));
       let finalUploadSpeed = 0;
       for (let i = 0; i <= 100; i += 1) {
@@ -111,18 +115,18 @@ export function SpeedTest() {
         }));
       }
 
-      // Calculate final metrics
+      // Complete the test
+      console.log('✅ Speed test completed!');
       const jitter = 5 + Math.random() * 15;
       const packetLoss = Math.random() * 2;
-      const finalPing = state.ping;
-      const grade = getSpeedGrade(finalDownloadSpeed, finalUploadSpeed, finalPing);
+      const grade = getSpeedGrade(finalDownloadSpeed, finalUploadSpeed, state.ping);
       
       const newResult: TestResult = {
         id: Date.now().toString(),
         timestamp: new Date(),
         downloadSpeed: finalDownloadSpeed,
         uploadSpeed: finalUploadSpeed,
-        ping: finalPing,
+        ping: state.ping,
         grade,
       };
 
@@ -138,7 +142,7 @@ export function SpeedTest() {
         testHistory: [newResult, ...prev.testHistory.slice(0, 4)]
       }));
     } catch (error) {
-      console.error('Speed test error:', error);
+      console.error('❌ Speed test error:', error);
       setState(prev => ({ 
         ...prev, 
         isRunning: false, 
@@ -187,29 +191,22 @@ export function SpeedTest() {
         </div>
 
         {/* Show different content based on test state */}
-        {(state.phase === 'idle' && !state.isRunning && state.downloadSpeed === 0) ? (
-          // Start Screen
+        {state.phase === 'idle' ? (
+          // Start Screen - Only show when completely idle
           <div className="text-center space-y-12">
             {/* Main GO Button */}
             <div className="flex justify-center">
               <div className="relative">
                 <Button
                   onClick={() => {
-                    console.log('GO button clicked!');
+                    console.log('🎯 GO BUTTON CLICKED!');
                     runSpeedTest();
                   }}
                   size="lg"
                   className="h-64 w-64 rounded-full bg-background border-2 border-speed-download hover:scale-105 transition-all duration-300 text-4xl font-bold cursor-pointer"
                   disabled={state.isRunning}
                 >
-                  {state.isRunning ? (
-                    <div className="flex flex-col items-center space-y-2">
-                      <RefreshCw className="w-12 h-12 animate-spin text-speed-download" />
-                      <span className="text-lg">{Math.round(state.progress)}%</span>
-                    </div>
-                  ) : (
-                    <span className="text-foreground">GO</span>
-                  )}
+                  <span className="text-foreground">GO</span>
                 </Button>
                 {/* Animated border ring */}
                 <div className="absolute inset-0 rounded-full border-2 border-speed-download animate-pulse opacity-50"></div>
@@ -270,39 +267,54 @@ export function SpeedTest() {
             </div>
           </div>
         ) : (
-          // Test Results View
+          // Test Running or Results View
           <div className="space-y-8">
+            
+            {/* Show running indicator when testing */}
+            {state.isRunning && (
+              <div className="text-center">
+                <div className="text-2xl font-bold text-speed-download mb-2">
+                  {state.phase === 'ping' && 'Testing Latency...'}
+                  {state.phase === 'download' && 'Testing Download Speed...'}
+                  {state.phase === 'upload' && 'Testing Upload Speed...'}
+                </div>
+                <div className="text-lg text-muted-foreground">
+                  {Math.round(state.progress)}% Complete
+                </div>
+              </div>
+            )}
+
             {/* Top Stats Bar */}
             <div className="glass-card rounded-2xl p-6">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div className="grid grid-cols-2 gap-8">
                 <div className="text-center">
                   <div className="flex items-center justify-center space-x-2 mb-2">
                     <Download className="w-5 h-5 text-speed-download" />
-                    <span className="text-sm font-medium text-muted-foreground">DOWNLOAD</span>
+                    <span className="text-sm font-medium text-muted-foreground">DOWNLOAD Mbps</span>
                   </div>
-                  <div className="text-3xl font-bold text-speed-download">
+                  <div className="text-4xl font-bold text-speed-download">
                     {state.downloadSpeed > 0 ? state.downloadSpeed.toFixed(2) : "—"}
                   </div>
-                  <div className="text-sm text-muted-foreground">Mbps</div>
                 </div>
 
                 <div className="text-center">
                   <div className="flex items-center justify-center space-x-2 mb-2">
                     <Upload className="w-5 h-5 text-speed-upload" />
-                    <span className="text-sm font-medium text-muted-foreground">UPLOAD</span>
+                    <span className="text-sm font-medium text-muted-foreground">UPLOAD Mbps</span>
                   </div>
-                  <div className="text-3xl font-bold text-speed-upload">
+                  <div className="text-4xl font-bold text-speed-upload">
                     {state.uploadSpeed > 0 ? state.uploadSpeed.toFixed(2) : "—"}
                   </div>
-                  <div className="text-sm text-muted-foreground">Mbps</div>
                 </div>
+              </div>
 
-                <div className="text-center">
-                  <div className="flex items-center justify-center space-x-2 mb-2">
-                    <Wifi className="w-4 h-4 text-speed-ping" />
-                    <span className="text-sm font-medium text-muted-foreground">PING</span>
+              {/* Ping Row */}
+              <div className="mt-6 flex justify-center">
+                <div className="flex items-center space-x-8">
+                  <div className="text-center">
+                    <span className="text-sm text-muted-foreground">Ping ms</span>
                   </div>
-                  <div className="flex items-center justify-center space-x-4">
+                  <div className="flex items-center space-x-4">
                     <div className="flex items-center space-x-1">
                       <div className="w-2 h-2 rounded-full bg-speed-ping"></div>
                       <span className="text-lg font-bold text-speed-ping">{state.ping > 0 ? state.ping.toFixed(0) : "—"}</span>
@@ -315,22 +327,6 @@ export function SpeedTest() {
                       <div className="w-2 h-2 rounded-full bg-speed-upload"></div>
                       <span className="text-lg font-bold text-speed-upload">{state.uploadSpeed > 0 ? Math.min(state.uploadSpeed * 1.8, 99).toFixed(0) : "—"}</span>
                     </div>
-                  </div>
-                  <div className="text-sm text-muted-foreground">ms</div>
-                </div>
-
-                <div className="text-center">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={refreshNetworkInfo}
-                    className="mb-2"
-                    disabled={networkLoading}
-                  >
-                    <RefreshCw className={cn("w-4 h-4", networkLoading && "animate-spin")} />
-                  </Button>
-                  <div className="text-sm text-muted-foreground">
-                    {networkInfo.location.city ? `${networkInfo.location.city}, ${networkInfo.location.region}` : 'Detecting...'}
                   </div>
                 </div>
               </div>
@@ -390,22 +386,23 @@ export function SpeedTest() {
               <div className="flex justify-center space-x-4">
                 <Button
                   onClick={() => {
-                    resetTest();
-                    setTimeout(() => runSpeedTest(), 100);
+                    setState(prev => ({
+                      ...prev,
+                      isRunning: false,
+                      phase: 'idle',
+                      downloadSpeed: 0,
+                      uploadSpeed: 0,
+                      ping: 0,
+                      progress: 0,
+                      jitter: 0,
+                      packetLoss: 0,
+                    }));
                   }}
                   size="lg"
                   className="bg-gradient-button hover:scale-105 transition-all duration-300"
                 >
                   <Play className="w-5 h-5 mr-2" />
                   Test Again
-                </Button>
-                <Button
-                  onClick={resetTest}
-                  variant="outline"
-                  size="lg"
-                >
-                  <RotateCcw className="w-5 h-5 mr-2" />
-                  Reset
                 </Button>
               </div>
             )}
